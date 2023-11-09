@@ -37,12 +37,22 @@
     
      <h2>Сканирование</h2>
 
-    <a class="btn" href="https://rikosoft.com/scan/index.php?callback=http://192.168.1.134:8090/webscan/index.html"> Добавить код</a>
+    <a id="btnAdd" class="btn" href="https://rikosoft.com/scan/index.php?callback=http://192.168.1.134:8090/webscan/index.html"> Добавить код</a>
     <button class="btn" id="btnClear">Очистить</button>
     <div id="barcodeList"></div>
 
 <script>
 const El = id => document.getElementById(id);
+
+
+
+const HTTPSserverScan='https://rikosoft.com/scan/index.php';
+let myURL = window.location.href;
+    myURL = myURL.split('?')[0];
+    myURL = HTTPSserverScan + '?callback=' + myURL;
+    const btnAdd = El('btnAdd');
+    btnAdd.href = myURL;
+
 
 
 const barcodeList = JSON.parse(localStorage.getItem('barcodeList')) || [];
