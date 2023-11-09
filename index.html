@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+<style>
+ body{
+    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #303139;
+    color: lightgray;
+    text-align: center;    
+ }   
+ .btn{
+    padding: 10px 20px;
+    border-radius: 20px;
+    background-color: #673AB7;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    border: unset;
+ 
+ }
+
+ .btn:active{
+    background-color: #521eab;
+ }
+
+ #barcodeList{
+    margin-top: 20px;
+ } 
+</style>    
+    
+     <h2>Сканирование</h2>
+
+    <a class="btn" href="https://rikosoft.com/scan/index.php?callback=http://192.168.1.134:8090/webscan/index.html"> Добавить код</a>
+    <button class="btn" id="btnClear">Очистить</button>
+    <div id="barcodeList"></div>
+
+<script>
+const El = id => document.getElementById(id);
+
+
+const barcodeList = JSON.parse(localStorage.getItem('barcodeList')) || [];
+const ElbarcodeList = El('barcodeList');
+const btnClear = El('btnClear');
+
+ElbarcodeList.innerHTML = barcodeList.map(barcode => `<div>${barcode}</div>`).join('');
+
+btnClear.addEventListener('click', () => {
+    barcodeList.length = 0;
+    localStorage.setItem('barcodeList', JSON.stringify(barcodeList));
+    ElbarcodeList.innerHTML = '';
+});
+
+const addBarcode = (barcodeValue) => {
+    barcodeList.push(barcodeValue);
+    localStorage.setItem('barcodeList', JSON.stringify(barcodeList));
+    let currentURL = window.location.href;
+    let newURL = currentURL.split('?')[0];
+    window.location.href= newURL;
+}
+
+
+const urlParams = new URLSearchParams(window.location.search);
+
+if ( urlParams.has('barcode') ) {
+  const barcodeValue = urlParams.get('barcode');
+    addBarcode(barcodeValue);
+}
+
+</script>
+
+
+</body>
+
+
+</html>

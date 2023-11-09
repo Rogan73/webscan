@@ -1,0 +1,261 @@
+<?php
+$callback=$_GET['callback'];
+
+?>
+
+
+
+<!DOCTYPE html>
+<html lang="ua">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сканування штрих-кодів</title>
+</head>
+<body>
+    
+
+<style>
+    body{
+        font-family: sans-serif;
+        background-color: #303139;
+    }
+    
+    .btn{
+    text-align: center;
+    padding: 12px 62px;
+    margin: 40px 0 20px 0;
+    border-radius: 20px;
+    background-color: #673AB7;/*#673AB7;*/
+    border: 0;
+    color: white;
+    font-size: 18px;
+    }    
+    
+    .flc{
+        display: flex;
+        justify-content: center;
+    }
+    
+    input{
+    border: 2px solid #673AB7;
+    border-radius: 28px;
+    font-size: 22px;
+    background-color: #303139;
+    color: white;
+    font-weight: bold;
+    padding: 10px;
+    margin-top: 20px ;  
+    text-align: center;
+    }
+</style>              
+   
+      
+      
+       <div >
+       
+   <div class="flc">
+             <input type="text" id="bar" value=""  size="12">
+              
+   </div>        
+   
+   <div class="flc" >
+   
+    <button id="startScan" class="btn" style="display: none;">Сканувати </button>
+    <button id="stopScan" class="btn" style="display: none; ">Припинити</button>
+   </div>     
+   <div class="flc" >
+    <a href="#" id="sendScan" class="btn" style="display: none;">Прийняти</a>
+  </div>     
+
+       
+                     
+        <div id="cnt" style="display: none"></div>
+
+ <div class="flc" >
+   
+
+    <div style="
+            width: 240px; 
+            height: 320px; 
+            display: block; 
+            visibility: false;  
+            margin-bottom: 30px; 
+            
+
+       ">
+        <div id="barcodeScanner" 
+            style="
+            visibility: false;  
+            transform: scale(0.5);
+            transform-origin: 0 0; 
+            width: 240px; 
+            height: 320px;                
+            
+            "
+            ></div>
+    </div>         
+
+   </div>         
+
+  
+   </div>
+    
+    
+<audio id="beep" preload="auto">
+    <source src="beep.mp3" type="audio/mpeg">
+</audio>    
+    
+    
+</body>
+
+
+<script src="quagga.min.js"></script>
+
+<script>
+    
+var callback='<?php echo $callback; ?>';
+    
+document.addEventListener("DOMContentLoaded", ()=> {
+    const startScanButton = document.querySelector("#startScan");
+    const stopScanButton = document.querySelector("#stopScan");
+    const sendScanButton = document.querySelector("#sendScan");    
+
+    const cnt = document.querySelector("#cnt");
+    var inp = document.querySelector("#bar");
+    const beepSound = document.querySelector("#beep");
+    
+    const scannedBarcodes = new Set(); // Множество для отслеживания уже обработанных штрихкодов
+    let scanning = false;
+    let counter=0;
+    
+    const video = document.querySelector("#barcodeScanner");
+    
+    
+    let quaggaInitialized = false;
+    
+    
+    startScanButton.addEventListener("click", ()=> {
+              startScan();
+    });    
+    
+    const startScan=()=>{
+        
+        Quagga.init({
+            numOfWorkers: 2,
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: video,// document.querySelector("#barcodeScanner"),
+                constraints: {
+                    width: 640,
+                    height: 480,
+                    facingMode: "environment",  // это передняя камера  /  user - передняя
+                },
+            },
+            decoder: {
+                readers: ["ean_reader"], //"code_128_reader", ean_reader
+            }
+
+            
+        }, (err)=> {
+            
+            if (err) {
+                console.error(err);
+                return;
+            }
+            
+            
+            
+            
+            var track = Quagga.CameraAccess.getActiveTrack();
+            if (track && typeof track.getCapabilities === 'function') {
+                track.applyConstraints({advanced: [{zoom: parseFloat(2)}]});
+                track.applyConstraints({advanced: [{torch: true}]});
+            }
+        
+                Quagga.start();
+            
+                scanning = true;
+                quaggaInitialized = true;            
+                startScanButton.style.display = "none";
+                stopScanButton.style.display = "block"; 
+                barcodeScanner.style.display = "block";
+                barcodeScanner.style.visibility = true;
+                sendScanButton.style.display = "none";
+            
+                inp.value='';        
+        
+            
+    });
+        
+    };
+        
+    
+    const stop =()=>{
+         if (scanning) {
+            Quagga.stop();
+            scanning = false;
+            startScanButton.style.display = "none";
+            stopScanButton.style.display = "none";
+            barcodeScanner.style.display = "none";
+             barcodeScanner.style.visibility = false;
+             sendScanButton.style.display = "block";
+             
+            
+         if (quaggaInitialized) {
+            Quagga.offDetected(); // Удалите обработчики событий
+            quaggaInitialized = false;
+            scannedBarcodes.clear();
+         }            
+        }
+     
+   };        
+        
+    stopScanButton.addEventListener("click", () => {
+        stop();
+        inp.value='';
+        cnt.innerHTML='';
+        window.location.href=callback;
+    });        
+        
+        
+ const addElement =(barcode)=>{
+     beepSound.play();  
+     inp.value=barcode;
+       cnt.innerHTML=counter;
+       scannedBarcodes[barcode]=0;
+     sendScanButton.href=callback+'?barcode='+barcode;
+     window.location.href=callback+'?barcode='+barcode;
+       
+ };        
+        
+Quagga.onDetected( (result)=> {
+        const barcode = result.codeResult.code;
+        scannedBarcodes[barcode] = (scannedBarcodes[barcode] || 0) + 1;
+        if (scannedBarcodes[barcode] > 3) {    
+            if (!scannedBarcodes.has(barcode)) {
+                scannedBarcodes.add(barcode);
+                counter=scannedBarcodes[barcode];
+                addElement(barcode);
+                stop();
+                }
+        }
+        
+ });            
+    
+    
+    
+    startScan();
+
+}); // DOMContentLoaded
+
+
+
+
+
+
+
+</script>
+
+</html>
